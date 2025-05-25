@@ -1,0 +1,9 @@
+{
+  "domain": "wattrix",
+  "name": "Wattrix",
+  "version": "0.1",
+  "documentation": "https://github.com/zarnoxio/wattrix-homeassitant",
+  "dependencies": [],
+  "codeowners": ["@zarnoxio"],
+  "requirements": ["aiohttp", "websockets"]
+}
