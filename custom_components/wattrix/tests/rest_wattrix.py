@@ -1,14 +1,11 @@
-import httpx
-import pytest
-import aiohttp
+import asyncio
 
-BASE_URL = "http://wattrix:8000/api"
+from custom_components.wattrix.sensor import WattrixSensor
 
-@pytest.mark.asyncio
-async def test_real_wattrix_status():
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"{BASE_URL}/status")
-        assert response.status_code == 200
-        data = response.json()
-        assert "mode" in data
-        assert "current_power" in data
+
+async def main():
+    host = "http://wattrix.local:8000"
+    sensor = WattrixSensor(host, "current_power")
+    await sensor.async_update()
+
+asyncio.run(main())

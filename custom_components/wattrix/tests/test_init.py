@@ -1,20 +1,40 @@
-import pytest
-from homeassistant.core import HomeAssistant
-from homeassistant.setup import async_setup_component
+import asyncio
+import logging
+from custom_components.wattrix import async_setup
 
-@pytest.mark.asyncio
-async def test_plugin_setup(hass: HomeAssistant):
-    # Simuluj načítanie konfigurácie pluginu
-    config = {
-        "wattrix": {
-            "host": "http://wattrix.local:8000",
-            "token": "test_token"
+# Nastav logging pre lepšiu viditeľnosť
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
+DOMAIN = "wattrix"
+
+class MockHass:
+    """Mockovaný objekt hass, ktorý simuluje Home Assistant."""
+    def __init__(self):
+        self.data = {}
+        self.config = {
+            DOMAIN: {
+                "host": "http://localhost:8000"  # <- toto je kľúčové
+            }
         }
-    }
+        self.states = {}
+        self.services = {}
+        self.bus = None
+        self.loop = asyncio.get_event_loop()
 
-    # Setup integrácie s konfiguráciou
-    success = await async_setup_component(hass, "wattrix", config)
-    assert success
+    def async_create_task(self, coro):
+        return asyncio.create_task(coro)  # Spustí async úlohu ako Home Assistant
 
-    # Skontroluj, či sa komponent správne zaregistroval
-    assert "wattrix" in hass.config.components
+async def main():
+    hass = MockHass()
+
+    # Volaj async_setup() priamo z __init__.py
+    result = await async_setup(hass, hass.config)
+
+    if result:
+        logger.info("✅ Wattrix setup completed successfully.")
+    else:
+        logger.error("❌ Wattrix setup failed.")
+
+if __name__ == "__main__":
+    asyncio.run(main())

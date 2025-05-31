@@ -1,9 +1,11 @@
 {
   "domain": "wattrix",
   "name": "Wattrix",
-  "version": "0.1",
+  "version": "0.2",
   "documentation": "https://github.com/zarnoxio/wattrix-homeassitant",
   "dependencies": [],
   "codeowners": ["@zarnoxio"],
-  "requirements": ["aiohttp", "websockets"]
+  "requirements": ["aiohttp", "websockets"],
+  "config_flow": true,
+  "iot_class": "local_polling"
 }
