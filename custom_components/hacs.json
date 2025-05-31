@@ -1,8 +1,8 @@
 {
-  "name": "Wattrix",
+  "name": "MaNoSens Wattrix",
   "content_in_root": false,
   "domain": "wattrix",
   "zip_release": false,
-  "filename": "wattrix/__init__.py",
+  "filename": "custom_components/wattrix/__init__.py",
   "render_readme": true
 }
