@@ -2,7 +2,7 @@
   "domain": "wattrix",
   "name": "Wattrix",
   "version": "0.2",
-  "documentation": "https://github.com/zarnoxio/wattrix-homeassitant",
+  "documentation": "https://github.com/zarnoxio/wattrix-homeassistant",
   "dependencies": [],
   "codeowners": ["@zarnoxio"],
   "requirements": ["aiohttp", "websockets"],
