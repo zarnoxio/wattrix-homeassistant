@@ -6,7 +6,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from custom_components.wattrix import DOMAIN
-from custom_components.wattrix.helpers import WattrixDataUpdateCoordinator, WattrixSerialNumberCoordinator, get_device_serial, WattrixSensor, WattrixVersionCoordinator
+from custom_components.wattrix.helpers import WattrixDataUpdateCoordinator, WattrixSerialNumberCoordinator, get_device_serial, WattrixSensor, WattrixVersionCoordinator, WattrixDeviceStateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,6 +26,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         version_coordinator = WattrixVersionCoordinator(hass, host)
         await version_coordinator.async_config_entry_first_refresh()
 
+        device_info_coordinator = WattrixDeviceStateCoordinator(hass, host)
+        await device_info_coordinator.async_config_entry_first_refresh()
+
         serial_number = await host.async_get_serial_number()
 
         sensors = [
@@ -35,6 +38,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
             WattrixSensor(coordinator, "Wattrix Mode Timeout", "timeout_seconds", serial_number, "s"),
             WattrixSensor(serial_coordinator, "Wattrix Serial Number", "serial_number", serial_number, ),
             WattrixSensor(version_coordinator, "Wattrix Version", "version", serial_number, ),
+            WattrixSensor(device_info_coordinator, "Wattrix Internal Temperature", "thermal_sensor", serial_number, "°C"),
         ]
 
         async_add_entities(sensors)

@@ -319,3 +319,22 @@ class WattrixVersionCoordinator(DataUpdateCoordinator):
                 return data
         except Exception as err:
             raise UpdateFailed(f"Error fetching data: {err}") from err
+
+class WattrixDeviceStateCoordinator(DataUpdateCoordinator):
+    def __init__(self, hass, host):
+        self._host = host
+        super().__init__(
+            hass,
+            _LOGGER,
+            name="Wattrix Device State Coordinator",
+            update_interval=timedelta(hours=1),
+        )
+
+    async def _async_update_data(self):
+        """Fetch data from Wattrix."""
+        try:
+            async with async_timeout.timeout(10):
+                data = await self._host.async_get_device_info()
+                return data
+        except Exception as err:
+            raise UpdateFailed(f"Error fetching data: {err}") from err

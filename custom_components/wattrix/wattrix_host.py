@@ -44,6 +44,17 @@ class WattrixHost:
         except Exception as err:
             raise UpdateFailed(f"Failed to fetch serial number: {err}")
 
+    async def async_get_device_info(self):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{self._base_url}/device-info") as resp:
+                    if resp.status != 200:
+                        raise UpdateFailed(f"HTTP {resp.status}")
+                    data = await resp.json()
+                    return data
+        except Exception as err:
+            raise UpdateFailed(f"Failed to fetch serial number: {err}")
+
     async def async_set_mode(self, mode: str, power_limit_percentage: float, timeout_seconds: int):
         payload = {
             "mode": mode,
