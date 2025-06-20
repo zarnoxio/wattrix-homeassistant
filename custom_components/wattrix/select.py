@@ -22,7 +22,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         serial_number=serial_number,
         initial_state=state.get("mode", "UNRESTRICTED_HEATING"),
         get_percentage=lambda: coordinator.data.get("power_limit_percentage_to_set", 100),
-        get_timeout=lambda: coordinator.data.get("timeout_seconds_to_set", 900)
+        get_timeout=lambda: coordinator.data.get("timeout_seconds_to_set", 900),
+        get_setpoint=lambda: coordinator.data.get("setpoint_to_set", None)
     )
 
     async_add_entities([entity])

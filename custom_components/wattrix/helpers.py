@@ -133,7 +133,7 @@ class WattrixSensor(SensorEntity):
 
 
 class WattrixModeSelect(CoordinatorEntity, SelectEntity):
-    def __init__(self, coordinator, description: SelectEntityDescription, host, serial_number, initial_state, get_percentage, get_timeout):
+    def __init__(self, coordinator, description: SelectEntityDescription, host, serial_number, initial_state, get_percentage, get_timeout, get_setpoint):
         super().__init__(coordinator)
         self._hass = coordinator.hass
         self.entity_description = description
@@ -141,6 +141,7 @@ class WattrixModeSelect(CoordinatorEntity, SelectEntity):
         self._serial_number = serial_number
         self._get_percentage = get_percentage
         self._get_timeout = get_timeout
+        self._get_setpoint = get_setpoint
 
         self._attr_unique_id = f"wattrix_{description.key}_{serial_number}"
         self._attr_options = description.options
@@ -199,6 +200,7 @@ class WattrixModeSelect(CoordinatorEntity, SelectEntity):
 
         power_limit_percentage = self._get_percentage()
         timeout_seconds = self._get_timeout()
+        setpoint = self._get_setpoint()
 
         success = await self._host.async_set_mode(option, power_limit_percentage, timeout_seconds)
         if success:
@@ -261,6 +263,24 @@ class WattrixTimeoutNumber(NumberEntity):
     async def async_set_native_value(self, value):
         self.coordinator.data["timeout_seconds_to_set"] = value
 
+class WattrixSetpointNumber(NumberEntity):
+    def __init__(self, host, serial_number, coordinator, initial_value=200):
+        self._host = host
+        self.coordinator = coordinator
+        self._attr_name = "Wattrix Regulation Setpoint"
+        self._attr_native_min_value = 0
+        self._attr_native_max_value = 10000  # 86400 seconds (24h)
+        self._attr_native_step = 10
+        self._attr_native_unit_of_measurement = "W"
+        self._attr_unique_id = f"wattrix_mode_setpoint_{serial_number}"
+        self.coordinator.data["setpoint_to_set"] = initial_value
+
+    @property
+    def native_value(self):
+        return self.coordinator.data.get("setpoint_to_set", 200)
+
+    async def async_set_native_value(self, value):
+        self.coordinator.data["setpoint_to_set"] = value
 
 class WattrixSerialNumberCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, host):
