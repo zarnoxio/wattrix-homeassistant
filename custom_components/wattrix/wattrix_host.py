@@ -55,12 +55,16 @@ class WattrixHost:
         except Exception as err:
             raise UpdateFailed(f"Failed to fetch serial number: {err}")
 
-    async def async_set_mode(self, mode: str, power_limit_percentage: float, timeout_seconds: int):
+    async def async_set_mode(self, mode: str, power_limit_percentage: float, timeout_seconds: int, setpoint: int = None):
         payload = {
             "mode": mode,
             "power_limit_percentage": power_limit_percentage,
             "timeout_seconds": timeout_seconds
         }
+
+        if setpoint is not None:
+            payload["setpoint"] = setpoint
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(f"{self._base_url}/mode", json=payload) as response:

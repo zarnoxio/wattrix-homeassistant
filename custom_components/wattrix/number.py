@@ -2,7 +2,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from .const import DOMAIN
-from .helpers import get_device_serial, WattrixPercentageNumber, WattrixTimeoutNumber, WattrixSetpointNumber
+from .helpers import WattrixPercentageNumber, WattrixTimeoutNumber, WattrixSetpointNumber
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):

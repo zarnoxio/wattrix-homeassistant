@@ -202,7 +202,7 @@ class WattrixModeSelect(CoordinatorEntity, SelectEntity):
         timeout_seconds = self._get_timeout()
         setpoint = self._get_setpoint()
 
-        success = await self._host.async_set_mode(option, power_limit_percentage, timeout_seconds)
+        success = await self._host.async_set_mode(option, power_limit_percentage, timeout_seconds, setpoint)
         if success:
             _LOGGER.info(f"Mode changed to {option}")
             self.coordinator.data.update({self.entity_description.key: option})
@@ -218,6 +218,7 @@ class WattrixModeSelect(CoordinatorEntity, SelectEntity):
         return {
             "power_limit_percentage": self.coordinator.data.get("power_limit_percentage", 100.0),
             "timeout_seconds": self.coordinator.data.get("timeout_seconds"),
+            "setpoint": self.coordinator.data.get("setpoint"),
             "serial_number": self._serial_number,
         }
 
