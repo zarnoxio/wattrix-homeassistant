@@ -31,12 +31,14 @@ class WattrixModeReapplyButton(ButtonEntity):
             raw_mode = self._coordinator.data.get("raw_mode_to_set", mode)
             power_limit_percentage = self._coordinator.data.get("power_limit_percentage_to_set", 100.0)
             timeout_seconds = self._coordinator.data.get("timeout_seconds_to_set", 0)
+            setpoint = self._coordinator.data.get("setpoint_to_set", None)
 
             _LOGGER.debug(f"Calling Wattrix API with: mode={raw_mode}, "
                           f"power_limit_percentage={power_limit_percentage}, "
-                          f"timeout_seconds={timeout_seconds}")
+                          f"timeout_seconds={timeout_seconds}"
+                          f", setpoint={setpoint}")
 
-            success = await self._host.async_set_mode(raw_mode, power_limit_percentage, timeout_seconds)
+            success = await self._host.async_set_mode(raw_mode, power_limit_percentage, timeout_seconds, setpoint)
 
             if success:
                 _LOGGER.info(f"Wattrix mode successfully set to {raw_mode}")
