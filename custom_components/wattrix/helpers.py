@@ -83,6 +83,8 @@ class WattrixDataUpdateCoordinator(DataUpdateCoordinator):
             "timeout_seconds": 900,
             "power_limit_percentage_to_set": 100,
             "timeout_seconds_to_set": 900,
+            "setpoint": 200,
+            "setpoint_to_set": 200,
         }
 
     async def _async_update_data(self):
@@ -91,6 +93,8 @@ class WattrixDataUpdateCoordinator(DataUpdateCoordinator):
             async with async_timeout.timeout(10):
                 data = await self._host.async_get_status()
                 self.data.update(data)
+
+                _LOGGER.info(f"Fetched data: {self.data}")
 
                 return self.data
 
