@@ -135,6 +135,37 @@ class WattrixSensor(SensorEntity):
     def should_poll(self):
         return False
 
+class WattrixOnlineSensor(SensorEntity):
+    def __init__(self, coordinator, serial_number):
+        self.coordinator = coordinator
+        self._name = "Wattrix Online Status"
+        self._key = "online_status"
+        self._attr_unique_id = f"wattrix_online_{serial_number}"
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def native_value(self):
+        return self.coordinator.last_update_success
+
+    @property
+    def native_unit_of_measurement(self):
+        return None
+
+    @property
+    def available(self):
+        return True
+
+    async def async_added_to_hass(self):
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self.async_write_ha_state)
+        )
+
+    @property
+    def should_poll(self):
+        return False
 
 class WattrixModeSelect(CoordinatorEntity, SelectEntity):
     def __init__(self, coordinator, description: SelectEntityDescription, host, serial_number, initial_state, get_percentage, get_timeout, get_setpoint):
