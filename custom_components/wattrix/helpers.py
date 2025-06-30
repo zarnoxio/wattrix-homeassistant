@@ -294,7 +294,7 @@ class WattrixSerialNumberCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name="Wattrix Serial Number Coordinator",
-            update_interval=timedelta(days=1),  # stačí 1× denne
+            update_interval=timedelta(minutes=1),
         )
 
     async def _async_update_data(self):
@@ -333,7 +333,7 @@ class WattrixVersionCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name="Wattrix Version Coordinator",
-            update_interval=timedelta(hours=1),
+            update_interval=timedelta(minutes=1),
         )
 
     async def _async_update_data(self):
