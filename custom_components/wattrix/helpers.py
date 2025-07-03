@@ -92,15 +92,24 @@ class WattrixDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             async with async_timeout.timeout(10):
                 data = await self._host.async_get_status()
-                self.data.update(data)
+
+                # Ak data je None alebo prázdne dict/list
+                if not data:
+                    raise UpdateFailed("No data received from Wattrix")
+
+                # Ak je self.data inicializované ako dict, môžeme update
+                if self.data is None:
+                    self.data = data
+                else:
+                    self.data.update(data)
 
                 _LOGGER.info(f"Fetched data: {self.data}")
 
                 return self.data
 
         except Exception as err:
+            _LOGGER.warning("Wattrix communication failed: %s", err)
             raise UpdateFailed(f"Error fetching data: {err}") from err
-
 class WattrixSensor(SensorEntity):
     def __init__(self, coordinator, name, key, serial_number, unit=None):
         self.coordinator = coordinator
