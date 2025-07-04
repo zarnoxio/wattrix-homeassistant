@@ -59,7 +59,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         host = hass.data[DOMAIN][entry.entry_id]["host"]
         coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
-        serial_number = await get_device_serial(host._base_url)  # alebo inak podľa implementácie
+        serial_number = await get_device_serial(host._base_url)
+        if serial_number and len(serial_number) > 0:
+            _LOGGER.info("Using serial number: %s", serial_number)
+        else:
+            _LOGGER.error("No serial number found for Wattrix device.")
+            return False
 
         refresh_button = WattrixModeReapplyButton(host, coordinator, serial_number)
 
@@ -69,3 +74,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         _LOGGER.error(f"Error setting up Wattrix sensors: {ex}")
         raise ex
 
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    return await hass.config_entries.async_unload_platforms(entry, ["number"])  # ak sú tvoje entity "number"
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload config entry."""
+    await async_unload_entry(hass, entry)
+    await async_setup_entry(hass, entry, hass.helpers.entity_platform.async_add_entities)

@@ -17,40 +17,45 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     """Set up Wattrix sensors from a config entry."""
-    try:
-        host = hass.data[DOMAIN][entry.entry_id]["host"]
-        coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
-
-        serial_coordinator = WattrixSerialNumberCoordinator(hass, host)
-        await serial_coordinator.async_config_entry_first_refresh()
-
-        version_coordinator = WattrixVersionCoordinator(hass, host)
-        await version_coordinator.async_config_entry_first_refresh()
-
-        device_info_coordinator = WattrixDeviceStateCoordinator(hass, host)
-        await device_info_coordinator.async_config_entry_first_refresh()
-
-        serial_number = await host.async_get_serial_number()
-
-        sensors = [
-            WattrixSensor(coordinator, "Wattrix Current Power", "current_power", serial_number, "W"),
-            WattrixSensor(coordinator, "Wattrix Target Power", "target_power", serial_number, "W"),
-            WattrixSensor(coordinator, "Wattrix Power Limit Percentage", "power_limit_percentage", serial_number, "%"),
-            WattrixSensor(coordinator, "Wattrix Mode Timeout", "timeout_seconds", serial_number, "s"),
-            WattrixSensor(coordinator, "Wattrix Mode Setpoint", "setpoint", serial_number, "W"),
-            WattrixSensor(serial_coordinator, "Wattrix Serial Number", "serial_number", serial_number, ),
-            WattrixSensor(version_coordinator, "Wattrix Version", "version", serial_number, ),
-            WattrixSensor(device_info_coordinator, "Wattrix Internal Temperature", "thermal_sensor", serial_number, "°C"),
-            WattrixOnlineSensor(coordinator, serial_number),
-        ]
-
-        async_add_entities(sensors)
-
-    except Exception as ex:
-        _LOGGER.error(f"Error setting up Wattrix sensors: {ex}")
-        raise ex
+    host = hass.data[DOMAIN][entry.entry_id]["host"]
+    coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
 
 
+    serial_number = await get_device_serial(host._base_url)
+    if serial_number and len(serial_number) > 0:
+        _LOGGER.info("Using serial number: %s", serial_number)
+    else:
+        _LOGGER.error("No serial number found for Wattrix device.")
+        return False
+
+    serial_coordinator = WattrixSerialNumberCoordinator(hass, host)
+    version_coordinator = WattrixVersionCoordinator(hass, host)
+    device_info_coordinator = WattrixDeviceStateCoordinator(hass, host)
+
+    sensors = [
+        WattrixSensor(coordinator, "Wattrix Current Power", "current_power", serial_number, "W"),
+        WattrixSensor(coordinator, "Wattrix Target Power", "target_power", serial_number, "W"),
+        WattrixSensor(coordinator, "Wattrix Power Limit Percentage", "power_limit_percentage", serial_number, "%"),
+        WattrixSensor(coordinator, "Wattrix Mode Timeout", "timeout_seconds", serial_number, "s"),
+        WattrixSensor(coordinator, "Wattrix Mode Setpoint", "setpoint", serial_number, "W"),
+        WattrixSensor(serial_coordinator, "Wattrix Serial Number", "serial_number", serial_number),
+        WattrixSensor(version_coordinator, "Wattrix Version", "version", serial_number),
+        WattrixSensor(device_info_coordinator, "Wattrix Internal Temperature", "thermal_sensor", serial_number, "°C"),
+        WattrixOnlineSensor(coordinator, serial_number),
+    ]
+
+    async_add_entities(sensors)
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    return await hass.config_entries.async_unload_platforms(entry, ["sensor"])
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload config entry."""
+    await async_unload_entry(hass, entry)
+    await async_setup_entry(hass, entry, hass.helpers.entity_platform.async_add_entities)
 
 
 

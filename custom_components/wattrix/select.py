@@ -1,3 +1,5 @@
+import logging
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -6,13 +8,21 @@ from .const import DOMAIN
 from .helpers import WattrixDataUpdateCoordinator, get_device_serial, WattrixModeSelect, WATTRIX_MODE_SELECT_DESCRIPTION
 
 
+_LOGGER = logging.getLogger(__name__)
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback):
     host = hass.data[DOMAIN][entry.entry_id]["host"]
 
     coordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
     await coordinator.async_refresh()
 
-    serial_number = await host.async_get_serial_number()
+    serial_number = await get_device_serial(host._base_url)
+    if serial_number and len(serial_number) > 0:
+        _LOGGER.info("Using serial number: %s", serial_number)
+    else:
+        _LOGGER.error("No serial number found for Wattrix device.")
+        return False
+
     state = await host.async_get_status()
 
     entity = WattrixModeSelect(
@@ -27,3 +37,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     )
 
     async_add_entities([entity])
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry."""
+    return await hass.config_entries.async_unload_platforms(entry, ["select"])  # alebo "sensor" podľa typu entity
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload config entry."""
+    await async_unload_entry(hass, entry)
+    await async_setup_entry(hass, entry, hass.helpers.entity_platform.async_add_entities)

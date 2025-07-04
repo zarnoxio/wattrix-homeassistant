@@ -64,7 +64,7 @@ async def get_device_serial(host: str) -> str:
                 return data.get("serial_number", "unknown")
     except Exception as e:
         _LOGGER.warning(f"Failed to fetch serial number: {e}")
-        return "unknown"
+        return None
 
 
 class WattrixDataUpdateCoordinator(DataUpdateCoordinator):
@@ -93,13 +93,11 @@ class WattrixDataUpdateCoordinator(DataUpdateCoordinator):
             async with async_timeout.timeout(10):
                 data = await self._host.async_get_status()
 
-                # Ak data je None alebo prázdne dict/list
                 if not data:
                     raise UpdateFailed("No data received from Wattrix")
 
-                # Ak je self.data inicializované ako dict, môžeme update
                 if self.data is None:
-                    self.data = data
+                    raise  UpdateFailed("Data is not initialized")
                 else:
                     self.data.update(data)
 
@@ -110,6 +108,8 @@ class WattrixDataUpdateCoordinator(DataUpdateCoordinator):
         except Exception as err:
             _LOGGER.warning("Wattrix communication failed: %s", err)
             raise UpdateFailed(f"Error fetching data: {err}") from err
+
+
 class WattrixSensor(SensorEntity):
     def __init__(self, coordinator, name, key, serial_number, unit=None):
         self.coordinator = coordinator
@@ -125,6 +125,8 @@ class WattrixSensor(SensorEntity):
 
     @property
     def native_value(self):
+        if self.coordinator.data is None:
+            return None
         return self.coordinator.data.get(self._key)
 
     @property
@@ -157,7 +159,10 @@ class WattrixOnlineSensor(SensorEntity):
 
     @property
     def native_value(self):
-        return self.coordinator.last_update_success
+        if self.coordinator:
+            return self.coordinator.last_update_success
+        else:
+            return False
 
     @property
     def native_unit_of_measurement(self):
@@ -281,13 +286,12 @@ class WattrixPercentageNumber(NumberEntity):
 
     @property
     def native_value(self):
-        # Číta aktuálnu hodnotu z koordinátora
+        if self.coordinator.data is None:
+            return None
         return self.coordinator.data.get("power_limit_percentage_to_set", 100)
 
     async def async_set_native_value(self, value):
         self.coordinator.data["power_limit_percentage_to_set"] = value
-
-
 
 class WattrixTimeoutNumber(NumberEntity):
     def __init__(self, host, serial_number, coordinator, initial_value=300):
@@ -303,6 +307,8 @@ class WattrixTimeoutNumber(NumberEntity):
 
     @property
     def native_value(self):
+        if self.coordinator.data is None:
+            return None
         return self.coordinator.data.get("timeout_seconds_to_set", 300)
 
     async def async_set_native_value(self, value):
@@ -334,7 +340,7 @@ class WattrixSerialNumberCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name="Wattrix Serial Number Coordinator",
-            update_interval=timedelta(minutes=1),
+            update_interval=timedelta(seconds=15),
         )
 
     async def _async_update_data(self):
@@ -373,7 +379,7 @@ class WattrixVersionCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name="Wattrix Version Coordinator",
-            update_interval=timedelta(minutes=1),
+            update_interval=timedelta(seconds=15),
         )
 
     async def _async_update_data(self):
