@@ -32,6 +32,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     version_coordinator = WattrixVersionCoordinator(hass, host)
     device_info_coordinator = WattrixDeviceStateCoordinator(hass, host)
 
+
     sensors = [
         WattrixSensor(coordinator, "Wattrix Current Power", "current_power", serial_number, "W"),
         WattrixSensor(coordinator, "Wattrix Target Power", "target_power", serial_number, "W"),
@@ -45,6 +46,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     ]
 
     async_add_entities(sensors)
+
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

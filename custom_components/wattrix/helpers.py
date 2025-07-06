@@ -61,7 +61,7 @@ async def get_device_serial(host: str) -> str:
             async with session.get(f"{host}/serial-number") as response:
                 response.raise_for_status()
                 data = await response.json()
-                return data.get("serial_number", "unknown")
+                return data.get("serial_number", None)
     except Exception as e:
         _LOGGER.warning(f"Failed to fetch serial number: {e}")
         return None
@@ -117,6 +117,7 @@ class WattrixSensor(SensorEntity):
         self._key = key
         self._unit = unit
         self._attr_unique_id = f"wattrix_{key}_{serial_number}"
+        _LOGGER.debug(f"Wattrix sensor created: self._attr_unique_id {self._attr_unique_id}")
 
 
     @property
