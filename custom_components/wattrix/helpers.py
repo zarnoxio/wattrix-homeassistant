@@ -115,7 +115,14 @@ class WattrixSensor(SensorEntity):
         self.coordinator = coordinator
         self._name = name
         self._key = key
+
         self._unit = unit
+        if not unit:
+            self._attr_device_class = None  # No device class for string sensors
+            self._attr_state_class = None  # No state class for string sensors
+            self._attr_native_unit_of_measurement = None  # No unit for string sensors
+            self._attr_suggested_display_precision = None  # No precision for string sensors
+
         self._attr_unique_id = f"wattrix_{key}_{serial_number}"
         _LOGGER.debug(f"Wattrix sensor created: self._attr_unique_id {self._attr_unique_id}")
 
