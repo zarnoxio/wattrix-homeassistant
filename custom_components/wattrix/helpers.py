@@ -1,5 +1,6 @@
 import logging
 from datetime import timedelta
+import datetime
 
 import aiohttp
 import async_timeout
@@ -417,3 +418,141 @@ class WattrixDeviceStateCoordinator(DataUpdateCoordinator):
                 return data
         except Exception as err:
             raise UpdateFailed(f"Error fetching data: {err}") from err
+
+
+class WattrixHeatingEnergySensor(SensorEntity):
+    def __init__(self, coordinator, serial_number, key, name):
+        self.coordinator = coordinator
+        self._key = key
+        self._attr_name = name
+        self._attr_unique_id = f"wattrix_{key}_{serial_number}"
+        self._attr_native_unit_of_measurement = "kWh"
+        self._attr_device_class = "energy"
+        if key.endswith("total"):
+            self._attr_state_class = "total_increasing"
+        else:
+            self._attr_state_class = "measurement"
+
+    @property
+    def native_value(self):
+        if self.coordinator.data is None:
+            return None
+        return self.coordinator.data.get(self._key)
+
+    @property
+    def available(self):
+        return self.coordinator.last_update_success
+
+    async def async_added_to_hass(self):
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self.async_write_ha_state)
+        )
+
+    @property
+    def should_poll(self):
+        return False
+
+
+class WattrixSensorDataUpdateCoordinator(DataUpdateCoordinator):
+    def __init__(self, hass, host):
+        self._host = host
+        super().__init__(
+            hass,
+            _LOGGER,
+            name="Wattrix data coordinator",
+            update_interval=timedelta(seconds=15),
+        )
+
+        self.data = {
+            "mode": "DISABLED",
+            "power_limit_percentage": 100,
+            "timeout_seconds": 900,
+            "power_limit_percentage_to_set": 100,
+            "timeout_seconds_to_set": 900,
+            "setpoint": 200,
+            "setpoint_to_set": 200,
+            # nové kľúče
+            "heating_energy_total": None,
+            "heating_energy_daily": None,
+        }
+
+    async def _async_update_data(self):
+        """Fetch data from Wattrix."""
+        try:
+            async with async_timeout.timeout(10):
+                status = await self._host.async_get_status()
+                if not status:
+                    raise UpdateFailed("No data received from Wattrix")
+
+                # načítaj nové REST API senzory
+                total = await self._host.async_get_sensor("heating_energy_total")
+                daily = await self._host.async_get_sensor("heating_energy_daily")
+
+                self.data.update(status)
+                if total:
+                    self.data["heating_energy_total"] = total.get("value")
+                if daily:
+                    self.data["heating_energy_daily"] = daily.get("value")
+
+                _LOGGER.info(f"Fetched data: {self.data}")
+                return self.data
+
+        except Exception as err:
+            _LOGGER.warning("Wattrix communication failed: %s", err)
+            raise UpdateFailed(f"Error fetching data: {err}") from err
+
+
+
+
+class WattrixScheduleSensor(SensorEntity):
+    def __init__(self, coordinator, serial_number):
+        self.coordinator = coordinator
+        self._attr_name = "Wattrix Schedule"
+        self._attr_unique_id = f"wattrix_schedule_{serial_number}"
+
+    @property
+    def native_value(self):
+        """Return count of slots in upcoming week."""
+        return len(self._get_upcoming_slots())
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            "schedule": self._get_upcoming_slots()
+        }
+
+    def _get_upcoming_slots(self):
+        schedule = self.coordinator.data or []
+        _LOGGER.info(f"Fetched schedule: {schedule}")
+        return schedule
+
+    async def async_added_to_hass(self):
+        self.async_on_remove(
+            self.coordinator.async_add_listener(self.async_write_ha_state)
+        )
+
+    @property
+    def should_poll(self):
+        return False
+
+
+class WattrixScheduleCoordinator(DataUpdateCoordinator):
+    def __init__(self, hass, host):
+        self._host = host
+        super().__init__(
+            hass,
+            _LOGGER,
+            name="Wattrix Schedule Coordinator",
+            update_interval=timedelta(minutes=1),  # napr. každých 5 minút
+        )
+
+    async def _async_update_data(self):
+        """Fetch schedule from Wattrix."""
+        try:
+            async with async_timeout.timeout(10):
+                data = await self._host.async_get_schedule(hours=24*7)
+                if not data or "schedule" not in data:
+                    raise UpdateFailed("No schedule data received from Wattrix")
+                return data["schedule"]   # rovno vráti list slotov
+        except Exception as err:
+            raise UpdateFailed(f"Error fetching schedule: {err}") from err

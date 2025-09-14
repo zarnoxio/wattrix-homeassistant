@@ -29,7 +29,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.error("No serial number found for Wattrix device.")
         return False
 
-    host = WattrixHost(host)
+    host = WattrixHost(hass, host)
 
     coordinator = WattrixDataUpdateCoordinator(hass, host)
     try:
