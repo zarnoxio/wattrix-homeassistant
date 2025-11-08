@@ -76,6 +76,11 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.version = 2
         hass.config_entries.async_update_entry(entry)
         _LOGGER.info("Wattrix config entry migrated to version 2")
+    if entry.version == 2:
+        # Do migration logic if needed
+        entry.version = 3
+        hass.config_entries.async_update_entry(entry)
+        _LOGGER.info("Wattrix config entry migrated to version 3")
 
     return True
 

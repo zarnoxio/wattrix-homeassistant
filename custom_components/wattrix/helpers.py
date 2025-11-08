@@ -485,14 +485,14 @@ class WattrixSensorDataUpdateCoordinator(DataUpdateCoordinator):
                     raise UpdateFailed("No data received from Wattrix")
 
                 # načítaj nové REST API senzory
-                total = await self._host.async_get_sensor("heating_energy_total")
-                daily = await self._host.async_get_sensor("heating_energy_daily")
+                total = await self._host.async_get_sensor("energy_total_kwh")
+                daily = await self._host.async_get_sensor("energy_today_kwh")
 
                 self.data.update(status)
                 if total:
-                    self.data["heating_energy_total"] = total.get("value")
+                    self.data["energy_total_kwh"] = total.get("value")
                 if daily:
-                    self.data["heating_energy_daily"] = daily.get("value")
+                    self.data["energy_today_kwh"] = daily.get("value")
 
                 _LOGGER.info(f"Fetched data: {self.data}")
                 return self.data

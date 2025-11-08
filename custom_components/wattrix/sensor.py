@@ -49,8 +49,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         WattrixSensor(serial_coordinator, "Wattrix Serial Number", "serial_number", serial_number),
         WattrixSensor(version_coordinator, "Wattrix Version", "version", serial_number),
         WattrixSensor(device_info_coordinator, "Wattrix Internal Temperature", "thermal_sensor", serial_number, "°C"),
-        WattrixHeatingEnergySensor(sensors_coordinator, serial_number, "heating_energy_total", "Wattrix Heating Energy Total"),
-        WattrixHeatingEnergySensor(sensors_coordinator, serial_number, "heating_energy_daily", "Wattrix Heating Energy Daily"),
+        WattrixHeatingEnergySensor(sensors_coordinator, serial_number, "energy_total_kwh", "Wattrix Heating Energy Total"),
+        WattrixHeatingEnergySensor(sensors_coordinator, serial_number, "energy_today_kwh", "Wattrix Heating Energy Daily"),
         WattrixScheduleSensor(schedule_coordinator, serial_number),
         WattrixOnlineSensor(coordinator, serial_number),
     ]
