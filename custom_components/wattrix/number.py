@@ -4,7 +4,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from .const import DOMAIN
-from .helpers import WattrixPercentageNumber, WattrixTimeoutNumber, WattrixSetpointNumber, get_device_serial
+from .helpers import WattrixPercentageNumber, WattrixTimeoutNumber, WattrixSetpointNumber, get_device_serial, WatttrixTemperatureNumber
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,7 +22,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
     async_add_entities([
         WattrixPercentageNumber(host, serial_number, coordinator, state.get("power_limit_percentage", 100)),
-        WattrixTimeoutNumber(host, serial_number, coordinator, state.get("timeout_seconds", 900)),
+        WattrixTimeoutNumber(host, serial_number, coordinator, 900),
+        WatttrixTemperatureNumber(host, serial_number, coordinator, "minimal_temperature_to_set","Wattrix Minimal Temperature", 30),
+        WatttrixTemperatureNumber(host, serial_number, coordinator, "minimal_temperature_recovery_delta_to_set", "Wattrix Temperature Recovery Delta",2),
         WattrixSetpointNumber(host, serial_number, coordinator, state.get("setpoint", 200))
     ])
 

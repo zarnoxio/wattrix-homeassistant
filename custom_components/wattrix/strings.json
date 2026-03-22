@@ -6,7 +6,8 @@
           "UNRESTRICTED_HEATING": "Unrestricted Heating",
           "EXPORT_SURPLUS_HEATING": "Export Surplus Heating",
           "SOLAR_AND_GRID_HEATING": "Solar and Grid Heating",
-          "DISABLED": "Disabled"
+          "DISABLED_HEATING": "Disabled",
+          "TOTAL_STOP": "Total Stop"
         }
       }
     }

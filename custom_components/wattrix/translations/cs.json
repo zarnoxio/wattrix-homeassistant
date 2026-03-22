@@ -6,7 +6,8 @@
           "UNRESTRICTED_HEATING": "Neomezené nahřívání",
           "EXPORT_SURPLUS_HEATING": "Nahřívání z přebytků",
           "SOLAR_AND_GRID_HEATING": "Nahřívání ze slunce a sítě",
-          "DISABLED": "Vypnuto"
+          "DISABLED_HEATING": "Vypnuto",
+          "TOTAL_STOP": "Celkové zastavení"
         }
       }
     }

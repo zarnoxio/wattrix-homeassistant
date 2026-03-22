@@ -55,12 +55,21 @@ class WattrixHost:
         except Exception as e:
             raise UpdateFailed(f"Failed to fetch device info: {e}") from e
 
-    async def async_set_mode(self, mode: str, power_limit_percentage: float, timeout_seconds: int, setpoint: int = None):
+    async def async_set_mode(self, mode: str,
+                             power_limit_percentage: float,
+                             timeout_seconds: int,
+                             setpoint: int = None,
+                             minimal_temperature=None,
+                             temperature_recovery_delta=None
+                             ):
         payload = {
             "mode": mode,
             "power_limit_percentage": power_limit_percentage,
             "timeout_seconds": timeout_seconds,
+            "minimal_temperature": minimal_temperature,
+            "temperature_recovery_delta": temperature_recovery_delta
         }
+
         if setpoint is not None:
             payload["setpoint"] = setpoint
 

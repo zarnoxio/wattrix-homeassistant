@@ -28,7 +28,8 @@ WATTRIX_MODE_SELECT_DESCRIPTION = SelectEntityDescription(
         "UNRESTRICTED_HEATING",
         "EXPORT_SURPLUS_HEATING",
         "SOLAR_AND_GRID_HEATING",
-        "DISABLED"
+        "DISABLED_HEATING",
+        "TOTAL_STOP"
     ],
     translation_key = "mode_selector"
 )
@@ -49,7 +50,7 @@ async def get_translated_options(hass: HomeAssistant, domain: str = "wattrix") -
     translation_key = f"component.{domain}.entity.select.mode_selector.state"
 
     mode_translations = {}
-    for mode in ["UNRESTRICTED_HEATING", "EXPORT_SURPLUS_HEATING", "SOLAR_AND_GRID_HEATING", "DISABLED"]:
+    for mode in ["UNRESTRICTED_HEATING", "EXPORT_SURPLUS_HEATING", "SOLAR_AND_GRID_HEATING", "DISABLED_HEATING", "TOTAL_STOP"]:
         key = f"{translation_key}.{mode.lower()}"
         mode_translations[mode] = translations.get(key, mode)
 
@@ -79,7 +80,7 @@ class WattrixDataUpdateCoordinator(DataUpdateCoordinator):
         )
 
         self.data = {
-            "mode": "DISABLED",
+            "mode": "DISABLED_HEATING",
             "power_limit_percentage": 100,
             "timeout_seconds": 900,
             "power_limit_percentage_to_set": 100,
@@ -191,7 +192,17 @@ class WattrixOnlineSensor(SensorEntity):
         return False
 
 class WattrixModeSelect(CoordinatorEntity, SelectEntity):
-    def __init__(self, coordinator, description: SelectEntityDescription, host, serial_number, initial_state, get_percentage, get_timeout, get_setpoint):
+    def __init__(self, coordinator,
+                 description: SelectEntityDescription,
+                 host,
+                 serial_number,
+                 initial_state,
+                 get_percentage,
+                 get_timeout,
+                 get_setpoint,
+                 get_minimal_temperature,
+                 get_minimal_temperature_recovery_delta,
+                 ):
         super().__init__(coordinator)
         self._hass = coordinator.hass
         self.entity_description = description
@@ -201,6 +212,8 @@ class WattrixModeSelect(CoordinatorEntity, SelectEntity):
         self._get_timeout = get_timeout
         self._get_setpoint = get_setpoint
 
+        self._get_minimal_temperature = get_minimal_temperature
+        self._get_minimal_temperature_recovery_delta = get_minimal_temperature_recovery_delta
         self._attr_unique_id = f"wattrix_{description.key}_{serial_number}"
         self._attr_options = description.options
         self._attr_name = description.name
@@ -243,7 +256,8 @@ class WattrixModeSelect(CoordinatorEntity, SelectEntity):
                 "UNRESTRICTED_HEATING": "Unrestricted Heating",
                 "EXPORT_SURPLUS_HEATING": "Export Surplus Heating",
                 "SOLAR_AND_GRID_HEATING": "Solar and Grid Heating",
-                "DISABLED": "Disabled"
+                "DISABLED_HEATING": "Disabled",
+                "TOTAL_STOP": "Total Stop"
             }
 
 
@@ -259,6 +273,10 @@ class WattrixModeSelect(CoordinatorEntity, SelectEntity):
         power_limit_percentage = self._get_percentage()
         timeout_seconds = self._get_timeout()
         setpoint = self._get_setpoint()
+        minimal_temperature = self._get_minimal_temperature()
+        minimal_temperature_recovery_delta = self._get_minimal_temperature_recovery_delta()
+
+        _LOGGER.info(f"Setting mode to {option} with power_limit_percentage={power_limit_percentage}, timeout_seconds={timeout_seconds}, setpoint={setpoint}, minimal_temperature={minimal_temperature}, minimal_temperature_recovery_delta={minimal_temperature_recovery_delta}")
 
         success = await self._host.async_set_mode(option, power_limit_percentage, timeout_seconds, setpoint)
         if success:
@@ -323,13 +341,35 @@ class WattrixTimeoutNumber(NumberEntity):
     async def async_set_native_value(self, value):
         self.coordinator.data["timeout_seconds_to_set"] = value
 
+class WatttrixTemperatureNumber(NumberEntity):
+    def __init__(self, host, serial_number, coordinator, key, name, initial_value=30):
+        self._host = host
+        self.coordinator = coordinator
+        self._attr_name = name
+        self._attr_native_min_value = 10
+        self._attr_native_max_value = 60
+        self._attr_native_step = 0.1
+        self._attr_native_unit_of_measurement = "°C"
+        self._attr_unique_id = f"wattrix_{key}_{serial_number}"
+        self._key = f"{key}"
+        self.coordinator.data[key] = initial_value
+
+    @property
+    def native_value(self):
+        if self.coordinator.data is None:
+            return None
+        return self.coordinator.data.get(self._key, None)
+
+    async def async_set_native_value(self, value):
+        self.coordinator.data[self._key] = value
+
 class WattrixSetpointNumber(NumberEntity):
     def __init__(self, host, serial_number, coordinator, initial_value=200):
         self._host = host
         self.coordinator = coordinator
         self._attr_name = "Wattrix Regulation Setpoint"
         self._attr_native_min_value = 0
-        self._attr_native_max_value = 10000  # 86400 seconds (24h)
+        self._attr_native_max_value = 60
         self._attr_native_step = 10
         self._attr_native_unit_of_measurement = "W"
         self._attr_unique_id = f"wattrix_mode_setpoint_{serial_number}"
@@ -464,7 +504,7 @@ class WattrixSensorDataUpdateCoordinator(DataUpdateCoordinator):
         )
 
         self.data = {
-            "mode": "DISABLED",
+            "mode": "DISABLED_HEATING",
             "power_limit_percentage": 100,
             "timeout_seconds": 900,
             "power_limit_percentage_to_set": 100,
@@ -474,6 +514,8 @@ class WattrixSensorDataUpdateCoordinator(DataUpdateCoordinator):
             # nové kľúče
             "heating_energy_total": None,
             "heating_energy_daily": None,
+            "heating_state": None,
+            "active_power": None
         }
 
     async def _async_update_data(self):
@@ -487,12 +529,19 @@ class WattrixSensorDataUpdateCoordinator(DataUpdateCoordinator):
                 # načítaj nové REST API senzory
                 total = await self._host.async_get_sensor("energy_total_kwh")
                 daily = await self._host.async_get_sensor("energy_today_kwh")
+                heating_state = await self._host.async_get_sensor("heating_state")
+                active_power = await self._host.async_get_sensor("active_power")
 
                 self.data.update(status)
                 if total:
                     self.data["energy_total_kwh"] = total.get("value")
                 if daily:
                     self.data["energy_today_kwh"] = daily.get("value")
+                if active_power:
+                    self.data["active_power"] = daily.get("value")
+                if heating_state:
+                    raw_val = str(heating_state.get('value', 'FALSE')).strip().upper()
+                    self.data['heating_state'] = (raw_val == "TRUE")
 
                 _LOGGER.info(f"Fetched data: {self.data}")
                 return self.data
