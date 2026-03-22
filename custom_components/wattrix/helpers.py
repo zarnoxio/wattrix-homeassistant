@@ -538,7 +538,7 @@ class WattrixSensorDataUpdateCoordinator(DataUpdateCoordinator):
                 if daily:
                     self.data["energy_today_kwh"] = daily.get("value")
                 if active_power:
-                    self.data["active_power"] = daily.get("value")
+                    self.data["active_power"] = active_power.get("value")
                 if heating_state:
                     raw_val = str(heating_state.get('value', 'FALSE')).strip().upper()
                     self.data['heating_state'] = (raw_val == "TRUE")
