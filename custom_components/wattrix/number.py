@@ -23,6 +23,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     async_add_entities([
         WattrixPercentageNumber(host, serial_number, coordinator, state.get("power_limit_percentage", 100)),
         WattrixTimeoutNumber(host, serial_number, coordinator, 900),
+        WatttrixTemperatureNumber(host, serial_number, coordinator, "target_temperature_to_set","Wattrix Target Temperature", 30),
         WatttrixTemperatureNumber(host, serial_number, coordinator, "minimal_temperature_to_set","Wattrix Minimal Temperature", 30),
         WatttrixTemperatureNumber(host, serial_number, coordinator, "minimal_temperature_recovery_delta_to_set", "Wattrix Temperature Recovery Delta",2),
         WattrixSetpointNumber(host, serial_number, coordinator, state.get("setpoint", 200))

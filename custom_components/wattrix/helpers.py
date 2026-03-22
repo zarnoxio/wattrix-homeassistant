@@ -200,6 +200,7 @@ class WattrixModeSelect(CoordinatorEntity, SelectEntity):
                  get_percentage,
                  get_timeout,
                  get_setpoint,
+                 get_target_temperature,
                  get_minimal_temperature,
                  get_minimal_temperature_recovery_delta,
                  ):
@@ -212,6 +213,7 @@ class WattrixModeSelect(CoordinatorEntity, SelectEntity):
         self._get_timeout = get_timeout
         self._get_setpoint = get_setpoint
 
+        self._get_target_temperature = get_target_temperature
         self._get_minimal_temperature = get_minimal_temperature
         self._get_minimal_temperature_recovery_delta = get_minimal_temperature_recovery_delta
         self._attr_unique_id = f"wattrix_{description.key}_{serial_number}"
@@ -273,12 +275,22 @@ class WattrixModeSelect(CoordinatorEntity, SelectEntity):
         power_limit_percentage = self._get_percentage()
         timeout_seconds = self._get_timeout()
         setpoint = self._get_setpoint()
+        target_temperature = self._get_target_temperature()
         minimal_temperature = self._get_minimal_temperature()
         minimal_temperature_recovery_delta = self._get_minimal_temperature_recovery_delta()
 
-        _LOGGER.info(f"Setting mode to {option} with power_limit_percentage={power_limit_percentage}, timeout_seconds={timeout_seconds}, setpoint={setpoint}, minimal_temperature={minimal_temperature}, minimal_temperature_recovery_delta={minimal_temperature_recovery_delta}")
+        _LOGGER.info(f"Setting mode to {option} with power_limit_percentage={power_limit_percentage}, timeout_seconds={timeout_seconds}, setpoint={setpoint}, target_temperature={target_temperature}, minimal_temperature={minimal_temperature}, minimal_temperature_recovery_delta={minimal_temperature_recovery_delta}")
 
-        success = await self._host.async_set_mode(option, power_limit_percentage, timeout_seconds, setpoint)
+        success = await self._host.async_set_mode(
+            option,
+            power_limit_percentage,
+            timeout_seconds,
+            setpoint,
+            target_temperature=target_temperature,
+            minimal_temperature=minimal_temperature,
+            temperature_recovery_delta=minimal_temperature_recovery_delta
+        )
+
         if success:
             _LOGGER.info(f"Mode changed to {option}")
             self.coordinator.data.update({self.entity_description.key: option})
@@ -347,7 +359,7 @@ class WatttrixTemperatureNumber(NumberEntity):
         self.coordinator = coordinator
         self._attr_name = name
         self._attr_native_min_value = 10
-        self._attr_native_max_value = 60
+        self._attr_native_max_value = 70
         self._attr_native_step = 0.1
         self._attr_native_unit_of_measurement = "°C"
         self._attr_unique_id = f"wattrix_{key}_{serial_number}"

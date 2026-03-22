@@ -29,16 +29,26 @@ class WattrixModeReapplyButton(ButtonEntity):
 
         try:
             raw_mode = self._coordinator.data.get("raw_mode_to_set", mode)
+            target_temperature = self._coordinator.data.get("target_temperature_to_set", None)
+
             power_limit_percentage = self._coordinator.data.get("power_limit_percentage_to_set", 100.0)
             timeout_seconds = self._coordinator.data.get("timeout_seconds_to_set", 0)
             setpoint = self._coordinator.data.get("setpoint_to_set", None)
 
             _LOGGER.debug(f"Calling Wattrix API with: mode={raw_mode}, "
                           f"power_limit_percentage={power_limit_percentage}, "
+                          f"target_temperature={target_temperature}"
                           f"timeout_seconds={timeout_seconds}"
                           f", setpoint={setpoint}")
 
-            success = await self._host.async_set_mode(raw_mode, power_limit_percentage, timeout_seconds, setpoint)
+            success = await self._host.async_set_mode(
+                raw_mode,
+                power_limit_percentage,
+                timeout_seconds,
+                setpoint,
+                target_temperature = target_temperature,
+
+            )
 
             if success:
                 _LOGGER.info(f"Wattrix mode successfully set to {raw_mode}")

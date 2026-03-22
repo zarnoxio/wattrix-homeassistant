@@ -59,6 +59,7 @@ class WattrixHost:
                              power_limit_percentage: float,
                              timeout_seconds: int,
                              setpoint: int = None,
+                             target_temperature: int = None,
                              minimal_temperature=None,
                              temperature_recovery_delta=None
                              ):
@@ -66,6 +67,7 @@ class WattrixHost:
             "mode": mode,
             "power_limit_percentage": power_limit_percentage,
             "timeout_seconds": timeout_seconds,
+            "target_temperature": target_temperature,
             "minimal_temperature": minimal_temperature,
             "temperature_recovery_delta": temperature_recovery_delta
         }
