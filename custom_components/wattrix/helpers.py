@@ -354,12 +354,12 @@ class WattrixTimeoutNumber(NumberEntity):
         self.coordinator.data["timeout_seconds_to_set"] = value
 
 class WatttrixTemperatureNumber(NumberEntity):
-    def __init__(self, host, serial_number, coordinator, key, name, initial_value=30):
+    def __init__(self, host, serial_number, coordinator, key, name, initial_value=30, min_value=0, max_value=70):
         self._host = host
         self.coordinator = coordinator
         self._attr_name = name
-        self._attr_native_min_value = 10
-        self._attr_native_max_value = 70
+        self._attr_native_min_value = min_value
+        self._attr_native_max_value = max_value
         self._attr_native_step = 0.1
         self._attr_native_unit_of_measurement = "°C"
         self._attr_unique_id = f"wattrix_{key}_{serial_number}"
@@ -381,7 +381,7 @@ class WattrixSetpointNumber(NumberEntity):
         self.coordinator = coordinator
         self._attr_name = "Wattrix Regulation Setpoint"
         self._attr_native_min_value = 0
-        self._attr_native_max_value = 60
+        self._attr_native_max_value = 10000
         self._attr_native_step = 10
         self._attr_native_unit_of_measurement = "W"
         self._attr_unique_id = f"wattrix_mode_setpoint_{serial_number}"
