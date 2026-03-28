@@ -34,10 +34,13 @@ class WattrixModeReapplyButton(ButtonEntity):
             power_limit_percentage = self._coordinator.data.get("power_limit_percentage_to_set", 100.0)
             timeout_seconds = self._coordinator.data.get("timeout_seconds_to_set", 0)
             setpoint = self._coordinator.data.get("setpoint_to_set", None)
+            minimal_temperature = self._coordinator.data.get("minimal_temperature_to_set", None)
+            temperature_recovery_delta = self._coordinator.data.get("minimal_temperature_recovery_delta_to_set", None)
 
             _LOGGER.debug(f"Calling Wattrix API with: mode={raw_mode}, "
                           f"power_limit_percentage={power_limit_percentage}, "
                           f"target_temperature={target_temperature}"
+                          f"minimal_temperature={minimal_temperature}"
                           f"timeout_seconds={timeout_seconds}"
                           f", setpoint={setpoint}")
 
@@ -47,6 +50,8 @@ class WattrixModeReapplyButton(ButtonEntity):
                 timeout_seconds,
                 setpoint,
                 target_temperature = target_temperature,
+                minimal_temperature = minimal_temperature,
+                temperature_recovery_delta = None
 
             )
 
